@@ -1,6 +1,19 @@
 import re
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+from transformers import pipeline
+
+# Используем лёгкую модель для распознавания именованных сущностей
+model_name = "cointegrated/rubert-tiny2"
+
+try:
+    nlp = pipeline(
+        "ner",
+        model=model_name,
+        aggregation_strategy="simple"
+    )
+except Exception as e:
+    print(f"Ошибка загрузки модели: {e}")
+    nlp = None
 
 # Словарь единиц измерения и их сокращений
 UNITS_DICT = {
@@ -20,18 +33,7 @@ def normalize_unit(unit_text):
     for full_name, short_name in UNITS_DICT.items():
         if full_name in unit_text:
             return short_name
-    # Если не найдено, возвращаем как есть (возможно, уже сокращено)
     return unit_text
-
-# Инициализация русскоязычной нейросети
-try:
-    model_name = "sberbank-ai/rugpt3small_based_on_gpt2"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForTokenClassification.from_pretrained(model_name)
-    nlp = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
-except Exception as e:
-    print(f"Ошибка загрузки модели: {e}")
-    nlp = None
 
 def extract_specs_with_ai(raw_data, code, field1, field2):
     data = []
@@ -51,4 +53,13 @@ def extract_specs_with_ai(raw_data, code, field1, field2):
             # Нормализуем единицу измерения
             normalized_unit = normalize_unit(unit)
 
-            data.
+            data.append({
+                "Поле №1": field1,
+                "Поле №2": field2,
+                "Код": code,
+                "Характеристика": name,
+                "Значение": value.replace(',', '.'),  # Заменяем запятую на точку для десятичных
+                "Единица измерения": normalized_unit
+            })
+
+    return pd.DataFrame(data)
