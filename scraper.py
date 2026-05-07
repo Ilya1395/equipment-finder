@@ -1,5 +1,5 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup → from bs4 import BeautifulSoup
 import re
 
 def search_equipment_specs(code, field1, field2):
